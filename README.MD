@@ -2,7 +2,7 @@
 
 A comprehensive data visualization dashboard for analyzing Filipino emigrant data across different dimensions including destinations, origins, demographics, and trends over time.
 
-## 🚀 Quick Start
+##  Quick Start
 
 ### 1. Install Dependencies
 
@@ -41,7 +41,7 @@ npm run dev
 
 The dashboard will be available at `http://localhost:3000`
 
-## 📊 Features
+## Features
 
 - **Geographic Visualization**: Interactive choropleth maps showing emigrant distribution
 - **Comparison Charts**: Compare emigrant data across different categories
@@ -51,7 +51,7 @@ The dashboard will be available at `http://localhost:3000`
 - **Relationship Analysis**: Explore correlations and relationships
 - **CSV Upload**: Upload new data to Firebase
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 - **Frontend**: React 19, TypeScript, Vite
 - **Routing**: TanStack Router
@@ -60,7 +60,7 @@ The dashboard will be available at `http://localhost:3000`
 - **Database**: Firebase Firestore
 - **Icons**: React Icons
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 src/
@@ -72,14 +72,14 @@ src/
 └── utils/            # Utility functions
 ```
 
-## 🔥 Firebase Configuration
+##  Firebase Configuration
 
 The project uses Firebase for:
 
 - **Firestore**: Data storage and retrieval
 - No authentication required (public access)
 
-## 📝 Data Upload
+##  Data Upload
 
 Navigate to `/upload` to upload CSV files. The system supports:
 
@@ -90,7 +90,7 @@ Navigate to `/upload` to upload CSV files. The system supports:
 - Education level data
 - Civil status data
 
-## 🚨 Troubleshooting
+##  Troubleshooting
 
 ### "Missing or insufficient permissions" Error
 
@@ -102,19 +102,19 @@ This means Firestore security rules haven't been updated. Follow the Firestore s
 2. Verify Firebase configuration in `src/firebase.ts`
 3. Ensure Firestore has data in the correct collections
 
-## 📦 Available Scripts
+##  Available Scripts
 
 - `npm run dev` - Start development server (port 3000)
 - `npm run build` - Build for production
 - `npm run serve` - Preview production build
 - `npm test` - Run tests
 
-## 🌐 Deployment
+##  Deployment
 
 1. Build the project: `npm run build`
 2. Deploy the `dist` folder to your hosting service
 3. Ensure Firestore rules are published
 
-## 📄 License
+##  License
 
 Private project
