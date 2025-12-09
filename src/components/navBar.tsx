@@ -11,6 +11,7 @@ import {
   AiOutlineDatabase,
 } from "react-icons/ai";
 import { MdRadar, MdAccountTree } from "react-icons/md";
+import { TbChartDots3 } from "react-icons/tb";
 import { Link } from "@tanstack/react-router";
 
 const navigationItems = [
@@ -38,6 +39,11 @@ const navigationItems = [
     name: "Trends",
     icon: <AiOutlineLineChart className="text-white text-xl" />,
     path: "/trends",
+  },
+  {
+    name: "ML Forecast",
+    icon: <TbChartDots3 className="text-white text-xl" />,
+    path: "/forecast",
   },
   {
     name: "Distribution",
