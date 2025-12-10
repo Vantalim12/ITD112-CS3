@@ -197,7 +197,11 @@ export class TimeSeriesMLP {
       const actuals: number[] = [];
       
       for (let i = 0; i < sampleSize; i++) {
-        const idx = Math.floor((i / sampleSize) * inputs.length);
+        // Fix: Ensure we can reach the last index by using (sampleSize - 1) in denominator
+        // When sampleSize === 1, use the first (and only) index
+        const idx = sampleSize === 1 
+          ? 0 
+          : Math.floor((i / (sampleSize - 1)) * (inputs.length - 1));
         const input = tf.tensor2d([inputs[idx]]);
         const pred = this.model!.predict(input) as tf.Tensor;
         const predValue = (await pred.data())[0];
