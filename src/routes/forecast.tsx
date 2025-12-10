@@ -13,6 +13,7 @@ import {
 import { useTrendData } from "../hooks/useTrendData";
 import { useForecast } from "../hooks/useForecast";
 import type { ActivationFunction } from "../ml/forecastModel";
+import { saveModelToFirebase } from "../api/modelService";
 
 export const Route = createFileRoute("/forecast")({
   component: ForecastPage,
@@ -28,6 +29,7 @@ function ForecastPage() {
   const [lookback, setLookback] = useState<number>(3);
   const [mlpNeurons, setMlpNeurons] = useState<string>("64, 32");
   const [activation, setActivation] = useState<ActivationFunction>("relu");
+  const [activation2, setActivation2] = useState<ActivationFunction>("relu");
 
   const { countryTrends, ageGroupTrends, loading, error, countries, ageGroups } =
     useTrendData();
@@ -127,6 +129,7 @@ function ForecastPage() {
       windowSize: lookback,
       hiddenLayers,
       activation,
+      activation2,
     });
   };
 
@@ -270,10 +273,10 @@ function ForecastPage() {
                 />
               </div>
 
-              {/* Activation Function */}
+              {/* Activation Function Layer 1 */}
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Activation Function
+                  Activation (Layer 1)
                 </label>
                 <select
                   value={activation}
@@ -288,11 +291,30 @@ function ForecastPage() {
                   <option value="linear">Linear</option>
                 </select>
               </div>
+
+              {/* Activation Function Layer 2 */}
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Activation (Layer 2)
+                </label>
+                <select
+                  value={activation2}
+                  onChange={(e) => setActivation2(e.target.value as ActivationFunction)}
+                  className="w-full p-3 border border-gray-600 rounded-lg bg-primary text-white focus:ring-highlights focus:border-highlights"
+                >
+                  <option value="relu">ReLU</option>
+                  <option value="tanh">Tanh</option>
+                  <option value="sigmoid">Sigmoid</option>
+                  <option value="elu">ELU</option>
+                  <option value="softmax">Softmax</option>
+                  <option value="linear">Linear</option>
+                </select>
+              </div>
             </div>
           </div>
 
           {/* Action Buttons */}
-          <div className="flex gap-4">
+          <div className="flex flex-wrap gap-4">
             <button
               onClick={handleTrain}
               disabled={forecast.state.isTraining || selectedTrendData.length < 6}
@@ -314,6 +336,53 @@ function ForecastPage() {
                 : "Generate Forecast"}
             </button>
             <button
+              onClick={async () => {
+                if (!forecast.state.metrics) {
+                  alert("No trained model to save");
+                  return;
+                }
+                
+                try {
+                  const modelName = `${dataType}_${selectedItem}_${new Date().toISOString()}`;
+                  
+                  // Parse MLP neurons for config
+                  const hiddenLayers = mlpNeurons
+                    .split(",")
+                    .map((n) => parseInt(n.trim()))
+                    .filter((n) => !isNaN(n) && n > 0);
+                  
+                  // Save to Firebase
+                  const modelId = await saveModelToFirebase({
+                    name: modelName,
+                    dataType,
+                    selectedItem,
+                    config: {
+                      windowSize: lookback,
+                      epochs: 100, // default value
+                      batchSize: 8, // default value
+                      learningRate: 0.001, // default value
+                      hiddenLayers,
+                      activation,
+                      activation2,
+                      validationSplit: 0.2, // default value
+                    },
+                    metrics: forecast.state.metrics,
+                    modelWeights: "", // Placeholder - TensorFlow.js models are complex to serialize
+                    createdAt: new Date(),
+                  });
+                  
+                  alert(`Model saved to Firebase!\nID: ${modelId}\nName: ${modelName}`);
+                } catch (error) {
+                  console.error("Error saving model:", error);
+                  alert(`Failed to save model: ${error instanceof Error ? error.message : "Unknown error"}`);
+                }
+              }}
+              disabled={!forecast.state.isTrained}
+              className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors"
+            >
+              Save Model to Firebase
+            </button>
+            <button
               onClick={forecast.reset}
               disabled={forecast.state.isTraining || forecast.state.isForecasting}
               className="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors"
@@ -333,35 +402,47 @@ function ForecastPage() {
         {/* Metrics Cards */}
         {forecast.state.isTrained && (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-4">
               {/* Training Loss */}
               {forecast.state.metrics && (
                 <>
-                  <div className="bg-secondary rounded-lg p-6 border border-gray-700">
-                    <p className="text-gray-400 text-sm">Training Loss (MSE)</p>
-                    <p className="text-2xl font-bold text-white">
-                      {forecast.state.metrics.loss.toFixed(4)}
-                    </p>
-                  </div>
-                  <div className="bg-secondary rounded-lg p-6 border border-gray-700">
-                    <p className="text-gray-400 text-sm">Validation Loss</p>
-                    <p className="text-2xl font-bold text-white">
-                      {forecast.state.metrics.valLoss.toFixed(4)}
-                    </p>
-                  </div>
-                  <div className="bg-secondary rounded-lg p-6 border border-gray-700">
-                    <p className="text-gray-400 text-sm">MAE</p>
-                    <p className="text-2xl font-bold text-white">
+                  <div className="bg-secondary rounded-lg p-4 border border-gray-700">
+                    <p className="text-gray-400 text-xs">MAE</p>
+                    <p className="text-xl font-bold text-white">
                       {forecast.state.metrics.mae.toFixed(2)}
+                    </p>
+                  </div>
+                  <div className="bg-secondary rounded-lg p-4 border border-gray-700">
+                    <p className="text-gray-400 text-xs">RMSE</p>
+                    <p className="text-xl font-bold text-white">
+                      {forecast.state.metrics.rmse.toFixed(2)}
+                    </p>
+                  </div>
+                  <div className="bg-secondary rounded-lg p-4 border border-gray-700">
+                    <p className="text-gray-400 text-xs">MAPE</p>
+                    <p className="text-xl font-bold text-white">
+                      {forecast.state.metrics.mape.toFixed(2)}%
+                    </p>
+                  </div>
+                  <div className="bg-secondary rounded-lg p-4 border border-gray-700">
+                    <p className="text-gray-400 text-xs">R²</p>
+                    <p className="text-xl font-bold text-white">
+                      {forecast.state.metrics.r2.toFixed(4)}
+                    </p>
+                  </div>
+                  <div className="bg-secondary rounded-lg p-4 border border-gray-700">
+                    <p className="text-gray-400 text-xs">Accuracy</p>
+                    <p className="text-xl font-bold text-green-400">
+                      {forecast.state.metrics.accuracy.toFixed(2)}%
                     </p>
                   </div>
                 </>
               )}
 
               {/* CAGR */}
-              <div className="bg-secondary rounded-lg p-6 border border-gray-700">
-                <p className="text-gray-400 text-sm">CAGR</p>
-                <p className="text-2xl font-bold text-white">
+              <div className="bg-secondary rounded-lg p-4 border border-gray-700">
+                <p className="text-gray-400 text-xs">CAGR</p>
+                <p className="text-xl font-bold text-white">
                   {forecast.state.cagr.toFixed(2)}%
                 </p>
               </div>
@@ -370,7 +451,7 @@ function ForecastPage() {
             {/* Model Configuration */}
             <div className="bg-secondary rounded-lg p-6 border border-gray-700 mb-6">
               <h3 className="text-lg font-semibold text-white mb-3">Trained Model Configuration</h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
                 <div>
                   <p className="text-gray-400">Lookback</p>
                   <p className="text-white font-semibold">{lookback}</p>
@@ -380,8 +461,12 @@ function ForecastPage() {
                   <p className="text-white font-semibold">{mlpNeurons}</p>
                 </div>
                 <div>
-                  <p className="text-gray-400">Activation</p>
+                  <p className="text-gray-400">Activation L1</p>
                   <p className="text-white font-semibold">{activation.toUpperCase()}</p>
+                </div>
+                <div>
+                  <p className="text-gray-400">Activation L2</p>
+                  <p className="text-white font-semibold">{activation2.toUpperCase()}</p>
                 </div>
                 <div>
                   <p className="text-gray-400">Data Points</p>

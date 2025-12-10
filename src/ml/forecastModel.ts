@@ -15,6 +15,7 @@ export interface TrainingConfig {
   learningRate: number;
   hiddenLayers: number[];
   activation: ActivationFunction;
+  activation2?: ActivationFunction; // Second activation for layer 2
   validationSplit: number;
 }
 
@@ -29,6 +30,10 @@ export interface ModelMetrics {
   valLoss: number;
   mae: number;
   mse: number;
+  rmse: number;
+  mape: number;
+  r2: number;
+  accuracy: number;
   trainTime: number;
 }
 
@@ -76,10 +81,15 @@ export class TimeSeriesMLP {
 
     // Hidden layers
     for (let i = 1; i < this.config.hiddenLayers.length; i++) {
+      // Use activation2 for the second layer if provided, otherwise use activation
+      const layerActivation = (i === 1 && this.config.activation2) 
+        ? this.config.activation2 
+        : this.config.activation;
+      
       model.add(
         tf.layers.dense({
           units: this.config.hiddenLayers[i],
-          activation: this.config.activation,
+          activation: layerActivation,
           kernelInitializer: 'heNormal',
         })
       );
@@ -171,11 +181,61 @@ export class TimeSeriesMLP {
     const trainTime = Date.now() - startTime;
     const finalEpoch = history.history.loss.length - 1;
 
+    // Calculate additional metrics
+    const mae = (history.history.mae?.[finalEpoch] as number) || 0;
+    const mse = (history.history.mse?.[finalEpoch] as number) || 0;
+    const rmse = Math.sqrt(mse);
+    
+    // Calculate MAPE, R², and Accuracy
+    let mape = 0;
+    let r2 = 0;
+    
+    try {
+      // Make predictions on a sample to calculate MAPE and R²
+      const sampleSize = Math.min(inputs.length, 50); // Use sample for performance
+      const predictions: number[] = [];
+      const actuals: number[] = [];
+      
+      for (let i = 0; i < sampleSize; i++) {
+        const idx = Math.floor((i / sampleSize) * inputs.length);
+        const input = tf.tensor2d([inputs[idx]]);
+        const pred = this.model!.predict(input) as tf.Tensor;
+        const predValue = (await pred.data())[0];
+        predictions.push(predValue);
+        actuals.push(targets[idx]);
+        input.dispose();
+        pred.dispose();
+      }
+      
+      // Calculate MAPE
+      const absolutePercentageErrors = predictions.map((pred, i) => {
+        const actual = actuals[i];
+        return actual !== 0 ? Math.abs((actual - pred) / actual) * 100 : 0;
+      });
+      mape = absolutePercentageErrors.reduce((sum, err) => sum + err, 0) / predictions.length;
+      
+      // Calculate R²
+      const mean = actuals.reduce((sum, val) => sum + val, 0) / actuals.length;
+      const ssTotal = actuals.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0);
+      const ssResidual = predictions.reduce((sum, pred, i) => sum + Math.pow(actuals[i] - pred, 2), 0);
+      r2 = ssTotal !== 0 ? Math.max(0, 1 - (ssResidual / ssTotal)) : 0;
+      
+    } catch (error) {
+      console.warn('Could not calculate MAPE/R²:', error);
+    }
+    
+    // Calculate accuracy (100 - MAPE), capped at 100%
+    const accuracy = Math.min(100, Math.max(0, 100 - mape));
+
     return {
       loss: history.history.loss[finalEpoch] as number,
       valLoss: (history.history.val_loss?.[finalEpoch] as number) || 0,
-      mae: (history.history.mae?.[finalEpoch] as number) || 0,
-      mse: (history.history.mse?.[finalEpoch] as number) || 0,
+      mae,
+      mse,
+      rmse,
+      mape,
+      r2,
+      accuracy,
       trainTime,
     };
   }
