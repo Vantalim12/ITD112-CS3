@@ -284,11 +284,9 @@ function ForecastPage() {
                   className="w-full p-3 border border-gray-600 rounded-lg bg-primary text-white focus:ring-highlights focus:border-highlights"
                 >
                   <option value="relu">ReLU</option>
+                  <option value="elu">ELU</option>
                   <option value="tanh">Tanh</option>
                   <option value="sigmoid">Sigmoid</option>
-                  <option value="elu">ELU</option>
-                  <option value="softmax">Softmax</option>
-                  <option value="linear">Linear</option>
                 </select>
               </div>
 
@@ -303,11 +301,9 @@ function ForecastPage() {
                   className="w-full p-3 border border-gray-600 rounded-lg bg-primary text-white focus:ring-highlights focus:border-highlights"
                 >
                   <option value="relu">ReLU</option>
+                  <option value="elu">ELU</option>
                   <option value="tanh">Tanh</option>
                   <option value="sigmoid">Sigmoid</option>
-                  <option value="elu">ELU</option>
-                  <option value="softmax">Softmax</option>
-                  <option value="linear">Linear</option>
                 </select>
               </div>
             </div>
