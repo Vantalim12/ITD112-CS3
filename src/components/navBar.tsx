@@ -12,6 +12,7 @@ import {
 } from "react-icons/ai";
 import { MdRadar, MdAccountTree } from "react-icons/md";
 import { TbChartDots3 } from "react-icons/tb";
+import { GiArtificialIntelligence } from "react-icons/gi";
 import { Link } from "@tanstack/react-router";
 
 const navigationItems = [
@@ -39,6 +40,11 @@ const navigationItems = [
     name: "Trends",
     icon: <AiOutlineLineChart className="text-white text-xl" />,
     path: "/trends",
+  },
+  {
+    name: "ML Training",
+    icon: <GiArtificialIntelligence className="text-white text-xl" />,
+    path: "/train",
   },
   {
     name: "ML Forecast",

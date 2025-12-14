@@ -15,7 +15,6 @@ export interface TrainingConfig {
   learningRate: number;
   hiddenLayers: number[];
   activation: ActivationFunction;
-  activation2?: ActivationFunction; // Second activation for layer 2
   validationSplit: number;
 }
 
@@ -81,15 +80,10 @@ export class TimeSeriesMLP {
 
     // Hidden layers
     for (let i = 1; i < this.config.hiddenLayers.length; i++) {
-      // Use activation2 for the second layer if provided, otherwise use activation
-      const layerActivation = (i === 1 && this.config.activation2) 
-        ? this.config.activation2 
-        : this.config.activation;
-      
       model.add(
         tf.layers.dense({
           units: this.config.hiddenLayers[i],
-          activation: layerActivation,
+          activation: this.config.activation,
           kernelInitializer: 'heNormal',
         })
       );
@@ -197,8 +191,6 @@ export class TimeSeriesMLP {
       const actuals: number[] = [];
       
       for (let i = 0; i < sampleSize; i++) {
-        // Fix: Ensure we can reach the last index by using (sampleSize - 1) in denominator
-        // When sampleSize === 1, use the first (and only) index
         const idx = sampleSize === 1 
           ? 0 
           : Math.floor((i / (sampleSize - 1)) * (inputs.length - 1));
@@ -299,11 +291,13 @@ export class TimeSeriesMLP {
    * Hyperparameter tuning using grid search
    * @param data - Training data
    * @param paramGrid - Grid of parameters to test
+   * @param onProgress - Optional callback for progress updates
    * @returns Best configuration and its metrics
    */
   async hyperparameterTuning(
     data: TimeSeriesPoint[],
-    paramGrid: Partial<TrainingConfig>[]
+    paramGrid: Partial<TrainingConfig>[],
+    onProgress?: (current: number, total: number, config: Partial<TrainingConfig>, metrics: ModelMetrics) => void
   ): Promise<{ bestConfig: TrainingConfig; bestMetrics: ModelMetrics }> {
     let bestMetrics: ModelMetrics | null = null;
     let bestConfig: TrainingConfig | null = null;
@@ -320,6 +314,11 @@ export class TimeSeriesMLP {
       try {
         const metrics = await tempModel.train(data);
         console.log(`  Loss: ${metrics.loss.toFixed(4)}, Val Loss: ${metrics.valLoss.toFixed(4)}`);
+
+        // Report progress
+        if (onProgress) {
+          onProgress(i + 1, paramGrid.length, paramGrid[i], metrics);
+        }
 
         // Select best based on validation loss (lower is better)
         if (!bestMetrics || metrics.valLoss < bestMetrics.valLoss) {
@@ -375,6 +374,41 @@ export class TimeSeriesMLP {
    */
   getConfig(): TrainingConfig {
     return { ...this.config };
+  }
+
+  /**
+   * Get the TensorFlow.js model
+   */
+  getModel(): tf.Sequential | null {
+    return this.model;
+  }
+
+  /**
+   * Get normalization parameters
+   */
+  getNormalizationParams(): { min: number; max: number } | null {
+    return this.normalizationParams;
+  }
+
+  /**
+   * Get last known values (window)
+   */
+  getLastKnownValues(): number[] | null {
+    return this.lastKnownValues;
+  }
+
+  /**
+   * Set model state (for loading saved models)
+   */
+  setModelState(
+    model: tf.Sequential,
+    normalizationParams: { min: number; max: number },
+    lastKnownValues: number[]
+  ): void {
+    this.model = model;
+    this.normalizationParams = normalizationParams;
+    this.lastKnownValues = lastKnownValues;
+    this.isTrained = true;
   }
 
   /**
