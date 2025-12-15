@@ -8,8 +8,15 @@ import {
   getModelsForItem,
   getBestModelForItem,
   deleteModelFromStorage,
+  exportModelToFile,
+  importModelFromFile,
   type SavedModel,
 } from './modelService';
+import {
+  saveModelMetadataToFirebase,
+  deleteModelMetadataFromFirebase,
+  updateModelLastUsedInFirebase,
+} from './firebaseModelService';
 
 export type { SavedModel as SavedModelInfo };
 
@@ -53,10 +60,19 @@ export class ModelManagementService {
   }
 
   /**
-   * Delete model from storage
+   * Delete model from storage and Firebase
    */
   static async deleteModel(modelId: string): Promise<void> {
     await deleteModelFromStorage(modelId);
+    
+    // Try to delete from Firebase (optional)
+    try {
+      await deleteModelMetadataFromFirebase(modelId);
+      console.log('✅ Model metadata deleted from Firebase');
+    } catch (firebaseError) {
+      console.warn('⚠️ Could not delete model metadata from Firebase:', firebaseError);
+      // Continue anyway - model is deleted locally
+    }
   }
 
   /**
@@ -135,6 +151,18 @@ export class ModelManagementService {
       }
     );
 
+    // Try to save metadata to Firebase (optional - won't fail if offline or no auth)
+    try {
+      const savedModel = getAllModels().find(m => m.id === modelId);
+      if (savedModel) {
+        await saveModelMetadataToFirebase(savedModel);
+        console.log('✅ Model metadata synced to Firebase');
+      }
+    } catch (firebaseError) {
+      console.warn('⚠️ Could not save model metadata to Firebase:', firebaseError);
+      // Continue anyway - model is still saved locally
+    }
+
     // Dispose final model
     finalModel.dispose();
 
@@ -162,10 +190,31 @@ export class ModelManagementService {
         metadata.lastKnownValues
       );
       
+      // Try to update last used in Firebase (optional)
+      try {
+        await updateModelLastUsedInFirebase(modelId);
+      } catch (firebaseError) {
+        console.warn('⚠️ Could not update last used in Firebase:', firebaseError);
+      }
+      
       return { model, metadata };
     } catch (error) {
       console.error('Error loading model:', error);
       throw error;
     }
+  }
+
+  /**
+   * Export model to JSON file
+   */
+  static async exportModel(modelId: string): Promise<void> {
+    await exportModelToFile(modelId);
+  }
+
+  /**
+   * Import model from JSON file
+   */
+  static async importModel(file: File): Promise<string> {
+    return await importModelFromFile(file);
   }
 }

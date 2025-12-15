@@ -205,3 +205,119 @@ export function updateModelLastUsed(modelId: string): void {
     console.warn('Error updating last used timestamp:', error);
   }
 }
+
+/**
+ * Export a model to JSON file (includes metadata and model weights)
+ */
+export async function exportModelToFile(modelId: string): Promise<void> {
+  try {
+    // Get model metadata
+    const allModels = getAllModels();
+    const metadata = allModels.find(m => m.id === modelId);
+    
+    if (!metadata) {
+      throw new Error('Model metadata not found');
+    }
+    
+    // Load model from IndexedDB
+    const model = await tf.loadLayersModel(`indexeddb://${metadata.modelStorageKey}`);
+    
+    // Save model to memory (as JSON)
+    const modelArtifacts = await model.save(tf.io.withSaveHandler(async (artifacts) => artifacts));
+    
+    // Create export package
+    const exportPackage = {
+      metadata: metadata,
+      modelArtifacts: {
+        modelTopology: modelArtifacts.modelTopology,
+        weightSpecs: modelArtifacts.weightSpecs,
+        weightData: Array.from(new Uint8Array(modelArtifacts.weightData as ArrayBuffer)),
+        format: modelArtifacts.format,
+        generatedBy: modelArtifacts.generatedBy,
+        convertedBy: modelArtifacts.convertedBy,
+      },
+      exportedAt: new Date().toISOString(),
+      version: '1.0',
+    };
+    
+    // Convert to JSON and download
+    const jsonStr = JSON.stringify(exportPackage);
+    const blob = new Blob([jsonStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${metadata.name}_${modelId}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    
+    console.log('✅ Model exported successfully');
+  } catch (error) {
+    console.error('❌ Error exporting model:', error);
+    throw error;
+  }
+}
+
+/**
+ * Import a model from JSON file
+ */
+export async function importModelFromFile(file: File): Promise<string> {
+  try {
+    // Read file
+    const text = await file.text();
+    const importPackage = JSON.parse(text);
+    
+    // Validate import package
+    if (!importPackage.metadata || !importPackage.modelArtifacts) {
+      throw new Error('Invalid model file format');
+    }
+    
+    // Generate new model ID to avoid conflicts
+    const newModelId = `model_imported_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const indexedDBKey = `tfjs_model_${newModelId}`;
+    
+    // Reconstruct weight data
+    const weightData = new Uint8Array(importPackage.modelArtifacts.weightData).buffer;
+    
+    // Reconstruct model artifacts
+    const modelArtifacts: tf.io.ModelArtifacts = {
+      modelTopology: importPackage.modelArtifacts.modelTopology,
+      weightSpecs: importPackage.modelArtifacts.weightSpecs,
+      weightData: weightData,
+      format: importPackage.modelArtifacts.format,
+      generatedBy: importPackage.modelArtifacts.generatedBy,
+      convertedBy: importPackage.modelArtifacts.convertedBy,
+    };
+    
+    // Load model from artifacts
+    const model = await tf.loadLayersModel(tf.io.fromMemory(modelArtifacts));
+    
+    // Save model to IndexedDB
+    await model.save(`indexeddb://${indexedDBKey}`);
+    
+    console.log('✅ Model loaded and saved to IndexedDB');
+    
+    // Create new metadata with updated ID
+    const newMetadata: SavedModel = {
+      ...importPackage.metadata,
+      id: newModelId,
+      modelStorageKey: indexedDBKey,
+      createdAt: new Date().toISOString(),
+      displayName: `${importPackage.metadata.displayName} (Imported)`,
+      lastUsed: undefined,
+    };
+    
+    // Save metadata to localStorage
+    const allModels = getAllModels();
+    allModels.push(newMetadata);
+    localStorage.setItem(MODELS_METADATA_KEY, JSON.stringify(allModels));
+    
+    console.log('✅ Model imported successfully with ID:', newModelId);
+    return newModelId;
+  } catch (error) {
+    console.error('❌ Error importing model:', error);
+    throw error;
+  }
+}

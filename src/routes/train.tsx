@@ -4,9 +4,14 @@ import { useTrendData } from "../hooks/useTrendData";
 import { ModelManagementService } from "../api/modelManagementService";
 import type { SavedModelInfo } from "../api/modelManagementService";
 import type { TrainingConfig, ModelMetrics } from "../ml/forecastModel";
+import { ProtectedRoute } from "../components/ProtectedRoute";
 
 export const Route = createFileRoute("/train")({
-  component: TrainPage,
+  component: () => (
+    <ProtectedRoute requiredPermission="ml.train">
+      <TrainPage />
+    </ProtectedRoute>
+  ),
 });
 
 type DataType = "destination" | "age";
@@ -30,6 +35,8 @@ function TrainPage() {
   } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [savedModels, setSavedModels] = useState<SavedModelInfo[]>([]);
+  const [isImporting, setIsImporting] = useState(false);
+  const fileInputRef = useState<HTMLInputElement | null>(null)[0];
 
   const { countryTrends, ageGroupTrends, loading, error: dataError, countries, ageGroups } =
     useTrendData();
@@ -132,6 +139,39 @@ function TrainPage() {
     } catch (err) {
       console.error("Delete error:", err);
       alert(`Failed to delete model: ${err instanceof Error ? err.message : "Unknown error"}`);
+    }
+  };
+
+  const handleExportModel = async (modelId: string) => {
+    try {
+      await ModelManagementService.exportModel(modelId);
+      alert('Model exported successfully! Check your downloads folder.');
+    } catch (err) {
+      console.error("Export error:", err);
+      alert(`Failed to export model: ${err instanceof Error ? err.message : "Unknown error"}`);
+    }
+  };
+
+  const handleImportModel = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setIsImporting(true);
+    setError(null);
+
+    try {
+      const modelId = await ModelManagementService.importModel(file);
+      await loadSavedModels();
+      alert(`Model imported successfully! Model ID: ${modelId}`);
+    } catch (err) {
+      console.error("Import error:", err);
+      setError(`Failed to import model: ${err instanceof Error ? err.message : "Unknown error"}`);
+    } finally {
+      setIsImporting(false);
+      // Reset file input
+      if (event.target) {
+        event.target.value = '';
+      }
     }
   };
 
@@ -268,14 +308,27 @@ function TrainPage() {
             </p>
           </div>
 
-          {/* Train Button */}
-          <button
-            onClick={handleTrain}
-            disabled={isTraining || selectedTrendData.length < 6}
-            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors font-semibold"
-          >
-            {isTraining ? "Training in Progress..." : "Start Training"}
-          </button>
+          {/* Action Buttons */}
+          <div className="flex flex-wrap gap-4">
+            <button
+              onClick={handleTrain}
+              disabled={isTraining || selectedTrendData.length < 6}
+              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors font-semibold"
+            >
+              {isTraining ? "Training in Progress..." : "Start Training"}
+            </button>
+
+            <label className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold cursor-pointer inline-flex items-center gap-2">
+              <input
+                type="file"
+                accept=".json"
+                onChange={handleImportModel}
+                disabled={isImporting}
+                className="hidden"
+              />
+              {isImporting ? "Importing..." : "📥 Import Model"}
+            </label>
+          </div>
 
           {/* Error Message */}
           {error && (
@@ -460,12 +513,21 @@ function TrainPage() {
                         </p>
                       )}
                     </div>
-                    <button
-                      onClick={() => handleDeleteModel(model.id)}
-                      className="px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700 transition-colors"
-                    >
-                      Delete
-                    </button>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleExportModel(model.id)}
+                        className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors"
+                        title="Export Model"
+                      >
+                        📤 Export
+                      </button>
+                      <button
+                        onClick={() => handleDeleteModel(model.id)}
+                        className="px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700 transition-colors"
+                      >
+                        Delete
+                      </button>
+                    </div>
                   </div>
                   
                   <div className="grid grid-cols-2 md:grid-cols-6 gap-3 text-sm">

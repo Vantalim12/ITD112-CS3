@@ -16,9 +16,14 @@ import {
   deleteDataByYear,
   getCategories,
 } from "../api/baseService";
+import { ProtectedRoute } from "../components/ProtectedRoute";
 
 export const Route = createFileRoute("/crud")({
-  component: CRUDPage,
+  component: () => (
+    <ProtectedRoute requiredPermission="data.create">
+      <CRUDPage />
+    </ProtectedRoute>
+  ),
 });
 
 type DataCollection =

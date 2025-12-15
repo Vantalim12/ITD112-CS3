@@ -2,11 +2,13 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { useAuth } from "../context/authContext";
 
-export const Route = createFileRoute("/")({
-  component: LoginLandingPage,
+import { Navigate } from "@tanstack/react-router";
+
+export const Route = createFileRoute("/login")({
+  component: () => <Navigate to="/" />,
 });
 
-function LoginLandingPage() {
+function LoginPage() {
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -17,7 +19,7 @@ function LoginLandingPage() {
   const { user, signIn, signUp, signInWithGoogle } = useAuth();
   const navigate = useNavigate();
 
-  // Redirect if already logged in
+  // Redirect if already logged in (to dashboard)
   useEffect(() => {
     if (user) {
       navigate({ to: "/dashboard" });
@@ -59,15 +61,6 @@ function LoginLandingPage() {
       setLoading(false);
     }
   };
-
-  // Show loading while checking auth
-  if (loading || user) {
-    return (
-      <div className="min-h-screen bg-primary flex items-center justify-center p-6">
-        <div className="text-gray-300">Loading...</div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-primary flex items-center justify-center p-6">

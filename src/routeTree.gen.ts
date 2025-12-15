@@ -14,13 +14,17 @@ import { Route as TrendsRouteImport } from './routes/trends'
 import { Route as TrainRouteImport } from './routes/train'
 import { Route as RelationshipsRouteImport } from './routes/relationships'
 import { Route as RadarRouteImport } from './routes/radar'
+import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as ParallelRouteImport } from './routes/parallel'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as GeographicRouteImport } from './routes/geographic'
 import { Route as ForecastRouteImport } from './routes/forecast'
 import { Route as DistributionRouteImport } from './routes/distribution'
+import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as CrudRouteImport } from './routes/crud'
 import { Route as CompositionRouteImport } from './routes/composition'
 import { Route as ComparisonRouteImport } from './routes/comparison'
+import { Route as AdminSetupRouteImport } from './routes/admin-setup'
 import { Route as IndexRouteImport } from './routes/index'
 
 const UploadRoute = UploadRouteImport.update({
@@ -48,9 +52,19 @@ const RadarRoute = RadarRouteImport.update({
   path: '/radar',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ProfileRoute = ProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ParallelRoute = ParallelRouteImport.update({
   id: '/parallel',
   path: '/parallel',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const GeographicRoute = GeographicRouteImport.update({
@@ -68,6 +82,11 @@ const DistributionRoute = DistributionRouteImport.update({
   path: '/distribution',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DashboardRoute = DashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CrudRoute = CrudRouteImport.update({
   id: '/crud',
   path: '/crud',
@@ -83,6 +102,11 @@ const ComparisonRoute = ComparisonRouteImport.update({
   path: '/comparison',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminSetupRoute = AdminSetupRouteImport.update({
+  id: '/admin-setup',
+  path: '/admin-setup',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -91,13 +115,17 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin-setup': typeof AdminSetupRoute
   '/comparison': typeof ComparisonRoute
   '/composition': typeof CompositionRoute
   '/crud': typeof CrudRoute
+  '/dashboard': typeof DashboardRoute
   '/distribution': typeof DistributionRoute
   '/forecast': typeof ForecastRoute
   '/geographic': typeof GeographicRoute
+  '/login': typeof LoginRoute
   '/parallel': typeof ParallelRoute
+  '/profile': typeof ProfileRoute
   '/radar': typeof RadarRoute
   '/relationships': typeof RelationshipsRoute
   '/train': typeof TrainRoute
@@ -106,13 +134,17 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/admin-setup': typeof AdminSetupRoute
   '/comparison': typeof ComparisonRoute
   '/composition': typeof CompositionRoute
   '/crud': typeof CrudRoute
+  '/dashboard': typeof DashboardRoute
   '/distribution': typeof DistributionRoute
   '/forecast': typeof ForecastRoute
   '/geographic': typeof GeographicRoute
+  '/login': typeof LoginRoute
   '/parallel': typeof ParallelRoute
+  '/profile': typeof ProfileRoute
   '/radar': typeof RadarRoute
   '/relationships': typeof RelationshipsRoute
   '/train': typeof TrainRoute
@@ -122,13 +154,17 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/admin-setup': typeof AdminSetupRoute
   '/comparison': typeof ComparisonRoute
   '/composition': typeof CompositionRoute
   '/crud': typeof CrudRoute
+  '/dashboard': typeof DashboardRoute
   '/distribution': typeof DistributionRoute
   '/forecast': typeof ForecastRoute
   '/geographic': typeof GeographicRoute
+  '/login': typeof LoginRoute
   '/parallel': typeof ParallelRoute
+  '/profile': typeof ProfileRoute
   '/radar': typeof RadarRoute
   '/relationships': typeof RelationshipsRoute
   '/train': typeof TrainRoute
@@ -139,13 +175,17 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/admin-setup'
     | '/comparison'
     | '/composition'
     | '/crud'
+    | '/dashboard'
     | '/distribution'
     | '/forecast'
     | '/geographic'
+    | '/login'
     | '/parallel'
+    | '/profile'
     | '/radar'
     | '/relationships'
     | '/train'
@@ -154,13 +194,17 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/admin-setup'
     | '/comparison'
     | '/composition'
     | '/crud'
+    | '/dashboard'
     | '/distribution'
     | '/forecast'
     | '/geographic'
+    | '/login'
     | '/parallel'
+    | '/profile'
     | '/radar'
     | '/relationships'
     | '/train'
@@ -169,13 +213,17 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/admin-setup'
     | '/comparison'
     | '/composition'
     | '/crud'
+    | '/dashboard'
     | '/distribution'
     | '/forecast'
     | '/geographic'
+    | '/login'
     | '/parallel'
+    | '/profile'
     | '/radar'
     | '/relationships'
     | '/train'
@@ -185,13 +233,17 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdminSetupRoute: typeof AdminSetupRoute
   ComparisonRoute: typeof ComparisonRoute
   CompositionRoute: typeof CompositionRoute
   CrudRoute: typeof CrudRoute
+  DashboardRoute: typeof DashboardRoute
   DistributionRoute: typeof DistributionRoute
   ForecastRoute: typeof ForecastRoute
   GeographicRoute: typeof GeographicRoute
+  LoginRoute: typeof LoginRoute
   ParallelRoute: typeof ParallelRoute
+  ProfileRoute: typeof ProfileRoute
   RadarRoute: typeof RadarRoute
   RelationshipsRoute: typeof RelationshipsRoute
   TrainRoute: typeof TrainRoute
@@ -236,11 +288,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RadarRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/profile': {
+      id: '/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof ProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/parallel': {
       id: '/parallel'
       path: '/parallel'
       fullPath: '/parallel'
       preLoaderRoute: typeof ParallelRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/geographic': {
@@ -264,6 +330,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DistributionRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/dashboard': {
+      id: '/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/crud': {
       id: '/crud'
       path: '/crud'
@@ -285,6 +358,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ComparisonRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin-setup': {
+      id: '/admin-setup'
+      path: '/admin-setup'
+      fullPath: '/admin-setup'
+      preLoaderRoute: typeof AdminSetupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -297,13 +377,17 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdminSetupRoute: AdminSetupRoute,
   ComparisonRoute: ComparisonRoute,
   CompositionRoute: CompositionRoute,
   CrudRoute: CrudRoute,
+  DashboardRoute: DashboardRoute,
   DistributionRoute: DistributionRoute,
   ForecastRoute: ForecastRoute,
   GeographicRoute: GeographicRoute,
+  LoginRoute: LoginRoute,
   ParallelRoute: ParallelRoute,
+  ProfileRoute: ProfileRoute,
   RadarRoute: RadarRoute,
   RelationshipsRoute: RelationshipsRoute,
   TrainRoute: TrainRoute,

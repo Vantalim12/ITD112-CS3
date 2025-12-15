@@ -478,6 +478,123 @@ function ForecastPage() {
             </ResponsiveContainer>
           </div>
         </div>
+
+        {/* Forecast Data Table */}
+        {forecasts.length > 0 && (
+          <div className="bg-secondary rounded-lg p-6 border border-gray-700">
+            <h2 className="text-xl font-semibold text-white mb-4">
+              Predicted Emigrants vs Historical Data
+            </h2>
+            <p className="text-gray-300 mb-4">
+              Comparison of forecasted values with the most recent historical data
+            </p>
+            
+            {/* Summary Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+              <div className="bg-primary/50 rounded-lg p-4">
+                <p className="text-gray-400 text-sm mb-1">Last Historical Year</p>
+                <p className="text-2xl font-bold text-white">
+                  {selectedTrendData.length > 0 ? selectedTrendData[selectedTrendData.length - 1].year : 'N/A'}
+                </p>
+              </div>
+              <div className="bg-primary/50 rounded-lg p-4">
+                <p className="text-gray-400 text-sm mb-1">Last Historical Value</p>
+                <p className="text-2xl font-bold text-blue-400">
+                  {selectedTrendData.length > 0 
+                    ? selectedTrendData[selectedTrendData.length - 1].value.toLocaleString() 
+                    : 'N/A'}
+                </p>
+              </div>
+              <div className="bg-primary/50 rounded-lg p-4">
+                <p className="text-gray-400 text-sm mb-1">Avg. Predicted Value</p>
+                <p className="text-2xl font-bold text-green-400">
+                  {Math.round(forecasts.reduce((sum, f) => sum + f.value, 0) / forecasts.length).toLocaleString()}
+                </p>
+              </div>
+              <div className="bg-primary/50 rounded-lg p-4">
+                <p className="text-gray-400 text-sm mb-1">Trend</p>
+                <p className="text-2xl font-bold text-white">
+                  {selectedTrendData.length > 0 && forecasts.length > 0
+                    ? forecasts[0].value > selectedTrendData[selectedTrendData.length - 1].value 
+                      ? '📈 Rising'
+                      : forecasts[0].value < selectedTrendData[selectedTrendData.length - 1].value
+                      ? '📉 Declining'
+                      : '➡️ Stable'
+                    : 'N/A'}
+                </p>
+              </div>
+            </div>
+
+            {/* Data Table */}
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b-2 border-gray-600">
+                    <th className="text-left py-3 px-4 text-gray-300 font-semibold">Year</th>
+                    <th className="text-right py-3 px-4 text-gray-300 font-semibold">Predicted Emigrants</th>
+                    <th className="text-right py-3 px-4 text-gray-300 font-semibold">Historical Emigrants</th>
+                    <th className="text-right py-3 px-4 text-gray-300 font-semibold">Change</th>
+                    <th className="text-right py-3 px-4 text-gray-300 font-semibold">% Change</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {forecasts.map((forecast, index) => {
+                    // Find the closest historical value (usually the last one for first forecast)
+                    const lastHistorical = selectedTrendData[selectedTrendData.length - 1];
+                    const historicalValue = lastHistorical?.value || 0;
+                    const change = forecast.value - historicalValue;
+                    const percentChange = historicalValue !== 0 
+                      ? ((change / historicalValue) * 100)
+                      : 0;
+                    
+                    return (
+                      <tr 
+                        key={forecast.year} 
+                        className="border-b border-gray-700 hover:bg-primary/30 transition-colors"
+                      >
+                        <td className="py-3 px-4 text-white font-semibold">{forecast.year}</td>
+                        <td className="py-3 px-4 text-right text-green-400 font-semibold">
+                          {forecast.value.toLocaleString()}
+                        </td>
+                        <td className="py-3 px-4 text-right text-blue-400">
+                          {index === 0 ? historicalValue.toLocaleString() : '-'}
+                        </td>
+                        <td className={`py-3 px-4 text-right font-semibold ${
+                          change > 0 ? 'text-red-400' : change < 0 ? 'text-green-400' : 'text-gray-400'
+                        }`}>
+                          {index === 0 ? (change > 0 ? '+' : '') + change.toLocaleString() : '-'}
+                        </td>
+                        <td className={`py-3 px-4 text-right font-semibold ${
+                          percentChange > 0 ? 'text-red-400' : percentChange < 0 ? 'text-green-400' : 'text-gray-400'
+                        }`}>
+                          {index === 0 
+                            ? (percentChange > 0 ? '+' : '') + percentChange.toFixed(2) + '%' 
+                            : '-'}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Legend */}
+            <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-4">
+                <h3 className="text-blue-300 font-semibold mb-2">📘 Historical Data</h3>
+                <p className="text-sm text-gray-300">
+                  Actual emigrant counts from past years used as baseline for comparison.
+                </p>
+              </div>
+              <div className="bg-green-900/20 border border-green-500/30 rounded-lg p-4">
+                <h3 className="text-green-300 font-semibold mb-2">📗 Predicted Data</h3>
+                <p className="text-sm text-gray-300">
+                  ML model forecasts for future years based on historical patterns and trends.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

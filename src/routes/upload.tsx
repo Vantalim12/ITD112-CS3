@@ -13,9 +13,14 @@ import {
   doc,
 } from "firebase/firestore";
 import { db } from "../firebase";
+import { ProtectedRoute } from "../components/ProtectedRoute";
 
 export const Route = createFileRoute("/upload")({
-  component: UploadPage,
+  component: () => (
+    <ProtectedRoute requiredPermission="data.upload">
+      <UploadPage />
+    </ProtectedRoute>
+  ),
 });
 
 function UploadPage() {
