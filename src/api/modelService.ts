@@ -39,7 +39,7 @@ export async function saveModelToStorage(
 ): Promise<string> {
   try {
     // Generate unique model ID
-    const modelId = `model_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const modelId = `model_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
     const indexedDBKey = `tfjs_model_${modelId}`;
     
     // Save model to IndexedDB (TensorFlow.js built-in)
@@ -222,19 +222,23 @@ export async function exportModelToFile(modelId: string): Promise<void> {
     // Load model from IndexedDB
     const model = await tf.loadLayersModel(`indexeddb://${metadata.modelStorageKey}`);
     
-    // Save model to memory (as JSON)
-    const modelArtifacts = await model.save(tf.io.withSaveHandler(async (artifacts) => artifacts));
+    // Save model to memory (as JSON) - use IOHandler to get artifacts
+    let modelArtifacts: tf.io.ModelArtifacts;
+    await model.save(tf.io.withSaveHandler(async (artifacts) => {
+      modelArtifacts = artifacts;
+      return { modelArtifactsInfo: {} } as tf.io.SaveResult;
+    }));
     
     // Create export package
     const exportPackage = {
       metadata: metadata,
       modelArtifacts: {
-        modelTopology: modelArtifacts.modelTopology,
-        weightSpecs: modelArtifacts.weightSpecs,
-        weightData: Array.from(new Uint8Array(modelArtifacts.weightData as ArrayBuffer)),
-        format: modelArtifacts.format,
-        generatedBy: modelArtifacts.generatedBy,
-        convertedBy: modelArtifacts.convertedBy,
+        modelTopology: modelArtifacts!.modelTopology,
+        weightSpecs: modelArtifacts!.weightSpecs,
+        weightData: Array.from(new Uint8Array(modelArtifacts!.weightData as ArrayBuffer)),
+        format: modelArtifacts!.format,
+        generatedBy: modelArtifacts!.generatedBy,
+        convertedBy: modelArtifacts!.convertedBy,
       },
       exportedAt: new Date().toISOString(),
       version: '1.0',
@@ -275,7 +279,7 @@ export async function importModelFromFile(file: File): Promise<string> {
     }
     
     // Generate new model ID to avoid conflicts
-    const newModelId = `model_imported_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const newModelId = `model_imported_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
     const indexedDBKey = `tfjs_model_${newModelId}`;
     
     // Reconstruct weight data
